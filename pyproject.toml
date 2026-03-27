@@ -1,0 +1,33 @@
+[project]
+name = "stale-obsidian-note-detector"
+version = "0.1.0"
+description = "Finds stale notes in Obsidian vault based on metadata and content."
+requires-python = ">=3.12"
+dependencies = [
+    "typer>=0.15.0",
+    "rich>=14.3.3",
+    "pydantic>=2.12.5",
+    "local-first-common",
+    "python-frontmatter>=1.1.0",
+]
+
+[project.scripts]
+stale-note-detector = "stale_obsidian_note_detector.logic:app"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/stale_obsidian_note_detector"]
+
+[dependency-groups]
+dev = [
+    "pytest>=9.0.2",
+]
+
+[tool.uv.sources]
+local-first-common = { git = "https://github.com/jamalhansen/local-first-common.git", branch = "main" }
+
+[tool.pytest.ini_options]
+pythonpath = ["src"]
