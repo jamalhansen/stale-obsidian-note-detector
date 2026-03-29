@@ -24,6 +24,7 @@ packages = ["src/stale_obsidian_note_detector"]
 [dependency-groups]
 dev = [
     "pytest>=9.0.2",
+    "pytest-cov>=6.0.0",
 ]
 
 [tool.uv.sources]
