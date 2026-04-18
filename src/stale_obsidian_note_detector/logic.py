@@ -1,3 +1,4 @@
+from local_first_common.config import get_setting
 import os
 import re
 from datetime import datetime, timedelta
@@ -11,6 +12,7 @@ from rich.table import Table
 
 from local_first_common.providers import PROVIDERS
 from local_first_common.cli import (
+    init_config_option,
     provider_option,
     model_option,
     dry_run_option,
@@ -26,6 +28,8 @@ from .schema import StaleReport, StaleAction
 from .prompts import build_system_prompt, build_user_prompt
 
 _TOOL = register_tool("stale-obsidian-note-detector")
+TOOL_NAME = "stale-obsidian-note-detector"
+DEFAULTS = {"provider": "ollama", "model": "llama3"}
 console = Console()
 app = typer.Typer(help="Finds signals of staleness and suggests cleanup actions.")
 
@@ -115,7 +119,9 @@ def analyze(
 
     # 2. LLM Review
     try:
-        llm = resolve_provider(PROVIDERS, provider, model, debug=debug, no_llm=no_llm)
+        actual_provider = get_setting(TOOL_NAME, "provider", cli_val=provider, default="ollama")
+    actual_model = get_setting(TOOL_NAME, "model", cli_val=model)
+    llm = resolve_provider(PROVIDERS, provider, model, debug=debug, no_llm=no_llm)
     except Exception as e:
         console.print(f"[red]Error: {e}[/red]")
         raise typer.Exit(1)
