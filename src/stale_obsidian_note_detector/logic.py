@@ -28,6 +28,18 @@ from .schema import StaleReport, StaleAction
 from .prompts import build_system_prompt, build_user_prompt
 
 TOOL_NAME = "stale-obsidian-note-detector"
+
+
+class StaleDetectorError(Exception):
+    """Base typed error for stale-obsidian-note-detector."""
+
+
+class ProviderSetupError(StaleDetectorError):
+    """Raised when provider resolution fails."""
+
+
+class LLMRunError(StaleDetectorError):
+    """Raised when the LLM analysis call fails."""
 DEFAULTS = {"provider": "ollama", "model": "llama3"}
 _TOOL = register_tool(TOOL_NAME)
 
@@ -124,6 +136,9 @@ def analyze(
         actual_provider = get_setting(TOOL_NAME, "provider", cli_val=provider, default="ollama")
         actual_model = get_setting(TOOL_NAME, "model", cli_val=model)
         llm = resolve_provider(PROVIDERS, actual_provider, actual_model, debug=debug, no_llm=no_llm)
+    except StaleDetectorError as e:
+        console.print(f"[red]Error: {e}[/red]")
+        raise typer.Exit(1)
     except Exception as e:
         console.print(f"[red]Error: {e}[/red]")
         raise typer.Exit(1)
@@ -136,6 +151,9 @@ def analyze(
             response = llm.complete(system, user, response_model=StaleReport)
             result = response
             run.item_count = len(candidates_metadata)
+    except LLMRunError as e:
+        console.print(f"[red]Error during LLM processing: {e}[/red]")
+        raise typer.Exit(1)
     except Exception as e:
         console.print(f"[red]Error during LLM processing: {e}[/red]")
         raise typer.Exit(1)
