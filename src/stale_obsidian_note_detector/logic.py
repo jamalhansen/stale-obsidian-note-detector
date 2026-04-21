@@ -40,15 +40,19 @@ class ProviderSetupError(StaleDetectorError):
 
 class LLMRunError(StaleDetectorError):
     """Raised when the LLM analysis call fails."""
+
+
 DEFAULTS = {"provider": "ollama", "model": "llama3"}
 _TOOL = register_tool(TOOL_NAME)
 
 console = Console()
 app = typer.Typer(help="Finds signals of staleness and suggests cleanup actions.")
 
+
 def count_links(content: str) -> int:
     """Simple regex count of wiki-style [[links]]."""
     return len(re.findall(r"\[\[.*?\]\]", content))
+
 
 def display_report(report: StaleReport):
     """Rich display of stale note candidates."""
@@ -69,15 +73,20 @@ def display_report(report: StaleReport):
             os.path.basename(c.file_path),
             c.suggested_action.value.upper(),
             f"{c.confidence:.2f}",
-            c.reason
+            c.reason,
         )
     console.print(table)
+
 
 @app.command()
 def analyze(
     months: int = typer.Option(6, "--months", help="Months of inactivity to flag."),
-    limit: int = typer.Option(20, "--limit", "-l", help="Limit number of files to process."),
-    provider: Annotated[str, provider_option(PROVIDERS)] = os.environ.get("MODEL_PROVIDER", "ollama"),
+    limit: int = typer.Option(
+        20, "--limit", "-l", help="Limit number of files to process."
+    ),
+    provider: Annotated[str, provider_option(PROVIDERS)] = os.environ.get(
+        "MODEL_PROVIDER", "ollama"
+    ),
     model: Annotated[Optional[str], model_option()] = None,
     dry_run: Annotated[bool, dry_run_option()] = False,
     no_llm: Annotated[bool, no_llm_option()] = False,
@@ -90,9 +99,11 @@ def analyze(
 
     vault_path_str = os.getenv("OBSIDIAN_VAULT_PATH")
     if not vault_path_str:
-        console.print("[red]Error: OBSIDIAN_VAULT_PATH environment variable not set.[/red]")
+        console.print(
+            "[red]Error: OBSIDIAN_VAULT_PATH environment variable not set.[/red]"
+        )
         raise typer.Exit(1)
-    
+
     vault_path = Path(vault_path_str)
     cutoff_date = datetime.now() - timedelta(days=30 * months)
 
@@ -102,40 +113,48 @@ def analyze(
         # Skip existing archive folders
         if "Archive" in root or "DeepArchive" in root or ".git" in root:
             continue
-            
+
         for file in files:
             if file.endswith(".md"):
                 file_path = Path(root) / file
                 mtime = datetime.fromtimestamp(file_path.stat().st_mtime)
-                
+
                 if mtime < cutoff_date:
                     try:
                         post = frontmatter.load(file_path)
                         link_count = count_links(post.content)
-                        
-                        candidates_metadata.append({
-                            "path": str(file_path.relative_to(vault_path)),
-                            "modified": mtime.strftime("%Y-%m-%d"),
-                            "link_count": link_count,
-                            "content": post.content[:1000]
-                        })
+
+                        candidates_metadata.append(
+                            {
+                                "path": str(file_path.relative_to(vault_path)),
+                                "modified": mtime.strftime("%Y-%m-%d"),
+                                "link_count": link_count,
+                                "content": post.content[:1000],
+                            }
+                        )
                     except Exception:
                         continue
-                
+
                 if len(candidates_metadata) >= limit:
                     break
         if len(candidates_metadata) >= limit:
             break
 
     if not candidates_metadata:
-        console.print(f"[green]No notes found modified before {cutoff_date.date()}.[/green]")
+        console.print(
+            f"[green]No notes found modified before {cutoff_date.date()}.[/green]"
+        )
         return
 
     # 2. LLM Review
     try:
-        actual_provider = get_setting(TOOL_NAME, "provider", cli_val=provider, default="ollama")
+        actual_provider = get_setting(
+            TOOL_NAME, "provider", cli_val=provider, default="ollama"
+        )
         actual_model = get_setting(TOOL_NAME, "model", cli_val=model)
-        llm = resolve_provider(PROVIDERS, actual_provider, actual_model, debug=debug, no_llm=no_llm)
+        llm = resolve_provider(
+            PROVIDERS, actual_provider, actual_model, debug=debug, no_llm=no_llm
+        )
     except StaleDetectorError as e:
         console.print(f"[red]Error: {e}[/red]")
         raise typer.Exit(1)
@@ -147,7 +166,9 @@ def analyze(
     user = build_user_prompt(candidates_metadata)
 
     try:
-        with timed_run("stale-obsidian-note-detector", llm.model, source_location=str(vault_path)) as run:
+        with timed_run(
+            "stale-obsidian-note-detector", llm.model, source_location=str(vault_path)
+        ) as run:
             response = llm.complete(system, user, response_model=StaleReport)
             result = response
             run.item_count = len(candidates_metadata)
@@ -164,7 +185,10 @@ def analyze(
         console.print("\n[yellow][dry-run] Analysis complete. No files moved.[/yellow]")
     else:
         # Final confirmation before moving?
-        console.print("\n[bold]Note:[/bold] File movement (archive/deep archive) requires 'apply' command (not implemented).")
+        console.print(
+            "\n[bold]Note:[/bold] File movement (archive/deep archive) requires 'apply' command (not implemented)."
+        )
+
 
 if __name__ == "__main__":
     app()
