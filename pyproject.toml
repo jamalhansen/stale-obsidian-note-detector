@@ -13,7 +13,7 @@ dependencies = [
 ]
 
 [project.scripts]
-stale-note-detector = "stale_obsidian_note_detector.logic:app"
+stale-note-detector = "stale_obsidian_note_detector.cli:app"
 
 [build-system]
 requires = ["hatchling"]

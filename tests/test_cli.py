@@ -1,6 +1,7 @@
 from unittest.mock import MagicMock, patch
 from typer.testing import CliRunner
-from stale_obsidian_note_detector.logic import app, display_report, count_links
+from stale_obsidian_note_detector.cli import app, display_report
+from stale_obsidian_note_detector.core import count_links
 from stale_obsidian_note_detector.schema import StaleReport, StaleCandidate, StaleAction
 
 runner = CliRunner()
@@ -33,8 +34,8 @@ def test_display_report_empty(capsys):
     captured = capsys.readouterr()
     assert "No stale notes found!" in captured.out
 
-@patch("stale_obsidian_note_detector.logic.resolve_provider")
-@patch("stale_obsidian_note_detector.logic.timed_run")
+@patch("stale_obsidian_note_detector.cli.resolve_provider")
+@patch("stale_obsidian_note_detector.cli.timed_run")
 @patch("os.getenv")
 def test_analyze_command(mock_getenv, mock_timed_run, mock_resolve_provider, tmp_path):
     vault_path = tmp_path / "vault"
