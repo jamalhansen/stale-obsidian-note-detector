@@ -1,8 +1,10 @@
 from unittest.mock import MagicMock, patch
+
 from typer.testing import CliRunner
+
 from stale_obsidian_note_detector.cli import app, display_report
 from stale_obsidian_note_detector.core import count_links
-from stale_obsidian_note_detector.schema import StaleReport, StaleCandidate, StaleAction
+from stale_obsidian_note_detector.schema import StaleAction, StaleCandidate, StaleReport
 
 runner = CliRunner()
 

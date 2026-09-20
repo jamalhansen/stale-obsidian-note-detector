@@ -1,8 +1,8 @@
 from stale_obsidian_note_detector.logic import (
-    count_links,
-    StaleDetectorError,
-    ProviderSetupError,
     LLMRunError,
+    ProviderSetupError,
+    StaleDetectorError,
+    count_links,
 )
 
 

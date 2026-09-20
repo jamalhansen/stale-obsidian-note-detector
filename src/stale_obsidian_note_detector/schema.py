@@ -1,6 +1,7 @@
 from enum import Enum
-from typing import List
+
 from pydantic import BaseModel
+
 
 class StaleAction(str, Enum):
     KEEP = "keep"
@@ -14,4 +15,4 @@ class StaleCandidate(BaseModel):
     confidence: float
 
 class StaleReport(BaseModel):
-    candidates: List[StaleCandidate]
+    candidates: list[StaleCandidate]

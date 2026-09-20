@@ -1,31 +1,30 @@
 import os
 from datetime import datetime, timedelta
 from pathlib import Path
-from typing import Annotated, Optional
+from typing import Annotated
 
-import typer
 import frontmatter
+import typer
+from local_first_common.cli import (
+    debug_option,
+    dry_run_option,
+    init_config_option,
+    model_option,
+    no_llm_option,
+    provider_option,
+    resolve_dry_run,
+    resolve_provider,
+    verbose_option,
+)
+from local_first_common.config import get_setting
+from local_first_common.providers import PROVIDERS
+from local_first_common.tracking import register_tool, timed_run
 from rich.console import Console
 from rich.table import Table
 
-from local_first_common.providers import PROVIDERS
-from local_first_common.cli import (
-    init_config_option,
-    provider_option,
-    model_option,
-    dry_run_option,
-    no_llm_option,
-    verbose_option,
-    debug_option,
-    resolve_provider,
-    resolve_dry_run,
-)
-from local_first_common.config import get_setting
-from local_first_common.tracking import register_tool, timed_run
-
-from .schema import StaleReport, StaleAction
+from .core import LLMRunError, StaleDetectorError, count_links
 from .prompts import build_system_prompt, build_user_prompt
-from .core import StaleDetectorError, LLMRunError, count_links
+from .schema import StaleAction, StaleReport
 
 TOOL_NAME = "stale-obsidian-note-detector"
 
@@ -74,7 +73,7 @@ def analyze(
     provider: Annotated[str, provider_option(PROVIDERS)] = os.environ.get(
         "MODEL_PROVIDER", "ollama"
     ),
-    model: Annotated[Optional[str], model_option()] = None,
+    model: Annotated[str | None, model_option()] = None,
     dry_run: Annotated[bool, dry_run_option()] = False,
     no_llm: Annotated[bool, no_llm_option()] = False,
     verbose: Annotated[bool, verbose_option()] = False,
@@ -92,7 +91,7 @@ def analyze(
         raise typer.Exit(1)
 
     vault_path = Path(vault_path_str)
-    cutoff_date = datetime.now() - timedelta(days=30 * months)
+    cutoff_date = datetime.now() - timedelta(days=30 * months)  # noqa: DTZ005 - must stay naive to compare against file mtimes below, which are also naive local time
 
     # 1. Heuristic filtering (modified date, link density)
     candidates_metadata = []
@@ -104,7 +103,7 @@ def analyze(
         for file in files:
             if file.endswith(".md"):
                 file_path = Path(root) / file
-                mtime = datetime.fromtimestamp(file_path.stat().st_mtime)
+                mtime = datetime.fromtimestamp(file_path.stat().st_mtime)  # noqa: DTZ006 - naive to match cutoff_date above
 
                 if mtime < cutoff_date:
                     try:
@@ -119,7 +118,7 @@ def analyze(
                                 "content": post.content[:1000],
                             }
                         )
-                    except Exception:
+                    except Exception:  # noqa: BLE001, S112 - a malformed note should be skipped, not crash the scan
                         continue
 
                 if len(candidates_metadata) >= limit:
@@ -147,7 +146,7 @@ def analyze(
     except StaleDetectorError as e:
         console.print(f"[red]Error: {e}[/red]")
         raise typer.Exit(1)
-    except Exception as e:
+    except Exception as e:  # noqa: BLE001 - top-level CLI boundary: report cleanly and exit
         console.print(f"[red]Error: {e}[/red]")
         raise typer.Exit(1)
 
@@ -164,7 +163,7 @@ def analyze(
     except LLMRunError as e:
         console.print(f"[red]Error during LLM processing: {e}[/red]")
         raise typer.Exit(1)
-    except Exception as e:
+    except Exception as e:  # noqa: BLE001 - top-level CLI boundary: report cleanly and exit
         console.print(f"[red]Error during LLM processing: {e}[/red]")
         raise typer.Exit(1)
 
