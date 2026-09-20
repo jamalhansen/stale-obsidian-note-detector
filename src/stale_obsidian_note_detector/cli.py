@@ -141,7 +141,7 @@ def analyze(
             TOOL_NAME, "model", cli_val=model, default=DEFAULTS["model"]
         )
         llm = resolve_provider(
-            PROVIDERS, actual_provider, actual_model, debug=debug, no_llm=no_llm
+            PROVIDERS, actual_provider, actual_model, debug=debug, no_llm=no_llm, tool_name=TOOL_NAME
         )
     except StaleDetectorError as e:
         console.print(f"[red]Error: {e}[/red]")
