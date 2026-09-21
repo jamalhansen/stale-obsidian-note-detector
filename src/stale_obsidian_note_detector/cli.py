@@ -18,7 +18,7 @@ from local_first_common.cli import (
 )
 from local_first_common.config import get_setting
 from local_first_common.providers import PROVIDERS
-from local_first_common.tracking import register_tool, timed_run
+from local_first_common.tracking import register_tool
 from rich.console import Console
 from rich.table import Table
 
@@ -153,13 +153,10 @@ def analyze(
     system = build_system_prompt()
     user = build_user_prompt(candidates_metadata)
 
+    llm.source_location = str(vault_path)
+    llm.item_count = len(candidates_metadata)
     try:
-        with timed_run(
-            "stale-obsidian-note-detector", llm.model, source_location=str(vault_path)
-        ) as run:
-            response = llm.complete(system, user, response_model=StaleReport)
-            result = response
-            run.item_count = len(candidates_metadata)
+        result = llm.complete(system, user, response_model=StaleReport)
     except LLMRunError as e:
         console.print(f"[red]Error during LLM processing: {e}[/red]")
         raise typer.Exit(1)

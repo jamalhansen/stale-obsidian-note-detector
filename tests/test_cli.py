@@ -37,9 +37,8 @@ def test_display_report_empty(capsys):
     assert "No stale notes found!" in captured.out
 
 @patch("stale_obsidian_note_detector.cli.resolve_provider")
-@patch("stale_obsidian_note_detector.cli.timed_run")
 @patch("os.getenv")
-def test_analyze_command(mock_getenv, mock_timed_run, mock_resolve_provider, tmp_path):
+def test_analyze_command(mock_getenv, mock_resolve_provider, tmp_path):
     vault_path = tmp_path / "vault"
     vault_path.mkdir()
     note_path = vault_path / "stale.md"
@@ -66,8 +65,7 @@ def test_analyze_command(mock_getenv, mock_timed_run, mock_resolve_provider, tmp
         ]
     )
     mock_resolve_provider.return_value = mock_llm
-    mock_timed_run.return_value.__enter__.return_value = MagicMock()
-    
+
     result = runner.invoke(app, ["--no-llm", "--months", "6"])
     
     assert result.exit_code == 0
