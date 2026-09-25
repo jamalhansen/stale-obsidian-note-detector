@@ -1,4 +1,4 @@
-from stale_obsidian_note_detector.logic import (
+from stale_obsidian_note_detector.core import (
     LLMRunError,
     ProviderSetupError,
     StaleDetectorError,
