@@ -145,10 +145,10 @@ def analyze(
         )
     except StaleDetectorError as e:
         console.print(f"[red]Error: {e}[/red]")
-        raise typer.Exit(1)
+        raise typer.Exit(1) from None
     except Exception as e:  # noqa: BLE001 - top-level CLI boundary: report cleanly and exit
         console.print(f"[red]Error: {e}[/red]")
-        raise typer.Exit(1)
+        raise typer.Exit(1) from None
 
     system = build_system_prompt()
     user = build_user_prompt(candidates_metadata)
@@ -159,10 +159,10 @@ def analyze(
         result = llm.complete(system, user, response_model=StaleReport)
     except LLMRunError as e:
         console.print(f"[red]Error during LLM processing: {e}[/red]")
-        raise typer.Exit(1)
+        raise typer.Exit(1) from None
     except Exception as e:  # noqa: BLE001 - top-level CLI boundary: report cleanly and exit
         console.print(f"[red]Error during LLM processing: {e}[/red]")
-        raise typer.Exit(1)
+        raise typer.Exit(1) from None
 
     display_report(result)
 
