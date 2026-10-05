@@ -8,11 +8,13 @@ class StaleAction(str, Enum):
     ARCHIVE = "archive"
     DEEP_ARCHIVE = "deep_archive"
 
+
 class StaleCandidate(BaseModel):
     file_path: str
     reason: str
     suggested_action: StaleAction
     confidence: float
+
 
 class StaleReport(BaseModel):
     candidates: list[StaleCandidate]

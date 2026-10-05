@@ -21,6 +21,7 @@ Return a JSON object with a list of 'candidates'. Each candidate must include:
 - confidence: Float from 0.0 to 1.0.
 """
 
+
 def build_user_prompt(notes_metadata: list[dict]) -> str:
     prompt = "Analyze these potential stale notes:\n\n"
     for note in notes_metadata:

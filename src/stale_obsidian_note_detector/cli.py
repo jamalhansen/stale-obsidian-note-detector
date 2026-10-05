@@ -29,15 +29,11 @@ from .schema import StaleAction, StaleReport
 TOOL_NAME = "stale-obsidian-note-detector"
 
 
-
-
 DEFAULTS = {"provider": "ollama", "model": "llama3.2:3b"}
 _TOOL = register_tool(TOOL_NAME)
 
 console = Console()
 app = typer.Typer(help="Finds signals of staleness and suggests cleanup actions.")
-
-
 
 
 def display_report(report: StaleReport):
@@ -67,12 +63,8 @@ def display_report(report: StaleReport):
 @app.command()
 def analyze(
     months: int = typer.Option(6, "--months", help="Months of inactivity to flag."),
-    limit: int = typer.Option(
-        20, "--limit", "-l", help="Limit number of files to process."
-    ),
-    provider: Annotated[str, provider_option(PROVIDERS)] = os.environ.get(
-        "MODEL_PROVIDER", "ollama"
-    ),
+    limit: int = typer.Option(20, "--limit", "-l", help="Limit number of files to process."),
+    provider: Annotated[str, provider_option(PROVIDERS)] = os.environ.get("MODEL_PROVIDER", "ollama"),
     model: Annotated[str | None, model_option()] = None,
     dry_run: Annotated[bool, dry_run_option()] = False,
     no_llm: Annotated[bool, no_llm_option()] = False,
@@ -85,9 +77,7 @@ def analyze(
 
     vault_path_str = os.getenv("OBSIDIAN_VAULT_PATH")
     if not vault_path_str:
-        console.print(
-            "[red]Error: OBSIDIAN_VAULT_PATH environment variable not set.[/red]"
-        )
+        console.print("[red]Error: OBSIDIAN_VAULT_PATH environment variable not set.[/red]")
         raise typer.Exit(1)
 
     vault_path = Path(vault_path_str)
@@ -127,19 +117,13 @@ def analyze(
             break
 
     if not candidates_metadata:
-        console.print(
-            f"[green]No notes found modified before {cutoff_date.date()}.[/green]"
-        )
+        console.print(f"[green]No notes found modified before {cutoff_date.date()}.[/green]")
         return
 
     # 2. LLM Review
     try:
-        actual_provider = get_setting(
-            TOOL_NAME, "provider", cli_val=provider, default="ollama"
-        )
-        actual_model = get_setting(
-            TOOL_NAME, "model", cli_val=model, default=DEFAULTS["model"]
-        )
+        actual_provider = get_setting(TOOL_NAME, "provider", cli_val=provider, default="ollama")
+        actual_model = get_setting(TOOL_NAME, "model", cli_val=model, default=DEFAULTS["model"])
         llm = resolve_provider(
             PROVIDERS, actual_provider, actual_model, debug=debug, no_llm=no_llm, tool_name=TOOL_NAME
         )
